@@ -8,19 +8,6 @@ static const char *TAG = "web server";
 
 httpd_handle_t server = NULL;
 
-void disconnect_handler(void *arg, esp_event_base_t event_base,
-                               int32_t event_id, void *event_data) {
-  httpd_handle_t *server = (httpd_handle_t *)arg;
-  if (*server) {
-    ESP_LOGI(TAG, "Stopping webserver");
-    if (stop_webserver(*server) == ESP_OK) {
-      *server = NULL;
-    } else {
-      ESP_LOGE(TAG, "Failed to stop http server");
-    }
-  }
-}
-
 static esp_err_t get_readings_handler(httpd_req_t *req) {
   char *buf;
   size_t buf_len;
@@ -55,6 +42,8 @@ static const httpd_uri_t get_readings = {
     .handler = get_readings_handler,
 };
 
+esp_err_t stop_webserver(httpd_handle_t server) { return httpd_stop(server); }
+
 httpd_handle_t start_webserver(void) {
   httpd_handle_t server = NULL;
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -77,9 +66,4 @@ httpd_handle_t start_webserver(void) {
 
   ESP_LOGI(TAG, "Error starting server!");
   return NULL;
-}
-
-esp_err_t stop_webserver(httpd_handle_t server) {
-  // Stop the httpd server
-  return httpd_stop(server);
 }

@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESP32 Weather Station</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #667eea;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2em;
+      }
+
+      .sensor-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 20px 0;
+        text-align: center;
+        transition: transform 0.3s;
+      }
+
+      .sensor-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .sensor-icon {
+        font-size: 3em;
+        margin-bottom: 10px;
+      }
+
+      .sensor-label {
+        color: #666;
+        font-size: 1em;
+        margin-bottom: 5px;
+      }
+
+      .sensor-value {
+        color: #333;
+        font-size: 2.5em;
+        font-weight: bold;
+      }
+
+      .sensor-unit {
+        color: #888;
+        font-size: 0.5em;
+      }
+
+      .info {
+        text-align: center;
+        color: #666;
+        margin-top: 20px;
+        font-size: 0.9em;
+      }
+
+      .update-time {
+        color: #999;
+        font-size: 0.8em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⛅ Weather Station</h1>
+
+      <div class="sensor-card">
+        <div class="sensor-icon">🌡️</div>
+        <div class="sensor-label">Temperature</div>
+        <div class="sensor-value">
+          <span id="temperature">--</span>
+          <span class="sensor-unit">°C</span>
+        </div>
+      </div>
+
+      <div class="sensor-card">
+        <div class="sensor-icon">💧</div>
+        <div class="sensor-label">Humidity</div>
+        <div class="sensor-value">
+          <span id="humidity">--</span>
+          <span class="sensor-unit">%</span>
+        </div>
+      </div>
+
+      <div class="info">
+        <p class="update-time">Last update: <span id="lastUpdate">--</span></p>
+      </div>
+    </div>
+
+    <script>
+      function updateData() {
+        fetch("/data")
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("temperature").textContent =
+              data.temperature.toFixed(1);
+            document.getElementById("humidity").textContent =
+              data.humidity.toFixed(1);
+            document.getElementById("lastUpdate").textContent =
+              new Date().toLocaleTimeString();
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      updateData();
+
+      setInterval(updateData, 2000);
+    </script>
+  </body>
+</html>

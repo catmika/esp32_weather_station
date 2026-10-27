@@ -4,34 +4,39 @@
 
 #include <esp_http_server.h>
 
+#include "sensor.h"
+
+#define HTTPD_503 "503 Service Unavailable"
+
 static const char *TAG = "web server";
 
 httpd_handle_t server = NULL;
 
 static esp_err_t get_readings_handler(httpd_req_t *req) {
-  char *buf;
-  size_t buf_len;
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_set_hdr(req, "Connection", "keep-alive");
+  char *resp = NULL;
 
-  /* Get header value string length and allocate memory for length + 1,
-   * extra byte for null termination */
-  buf_len = httpd_req_get_hdr_value_len(req, "Host") + 1;
-  if (buf_len > 1) {
-    buf = malloc(buf_len);
-    ESP_RETURN_ON_FALSE(buf, ESP_ERR_NO_MEM, TAG, "buffer alloc failed");
-    /* Copy null terminated value string into buffer */
-    if (httpd_req_get_hdr_value_str(req, "Host", buf, buf_len) == ESP_OK) {
-      ESP_LOGI(TAG, "Found header => Host: %s", buf);
+  sensor_err_t sensor_err = read_dht();
+
+  if (sensor_err != SENSOR_OK) {
+    httpd_resp_set_status(req, HTTPD_503);
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+  } else {
+    int rc = asprintf(&resp,
+                      "{\"temperature\": \"%.1f\","
+                      "\"humidity\": \"%.1f\"}",
+                      sensor_readings.temperature, sensor_readings.humidity);
+    if (rc < 0) {
+      ESP_LOGE(TAG, "asprintf() returned: %d", rc);
+      return ESP_FAIL;
     }
-    free(buf);
   }
 
-  /* Set some custom headers */
-  // httpd_resp_set_hdr(req, "Custom-Header-1", "Custom-Value-1");
-
-  /* Send response with custom headers and body set as the
-   * string passed in user context*/
-  const char *resp_str = "Hello ESP";
-  httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
+  httpd_resp_set_status(req, HTTPD_200);
+  httpd_resp_send(req, resp, strlen(resp));
+  free(resp);
 
   return ESP_OK;
 }
@@ -55,15 +60,9 @@ httpd_handle_t start_webserver(void) {
     // Set URI handlers
     ESP_LOGI(TAG, "Registering URI handlers");
     httpd_register_uri_handler(server, &get_readings);
-    // #if CONFIG_EXAMPLE_ENABLE_SSE_HANDLER
-    //     httpd_register_uri_handler(server, &sse); // Register SSE handler
-    // #endif
-    // #if CONFIG_EXAMPLE_BASIC_AUTH
-    //     httpd_register_basic_auth(server);
-    // #endif
     return server;
   }
 
-  ESP_LOGI(TAG, "Error starting server!");
+  ESP_LOGI(TAG, "Error starting server");
   return NULL;
 }

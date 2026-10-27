@@ -12,6 +12,16 @@ static const char *TAG = "web server";
 
 httpd_handle_t server = NULL;
 
+extern const char index_html_start[] asm("_binary_index_html_start");
+extern const char index_html_end[] asm("_binary_index_html_end");
+
+static esp_err_t get_index_handler(httpd_req_t *req) {
+  httpd_resp_set_type(req, "text/html; charset=utf-8");
+  httpd_resp_set_hdr(req, "Connection", "keep-alive");
+  return httpd_resp_send(req, index_html_start,
+                         index_html_end - index_html_start - 1);
+}
+
 static esp_err_t get_readings_handler(httpd_req_t *req) {
   httpd_resp_set_type(req, "application/json");
   httpd_resp_set_hdr(req, "Connection", "keep-alive");
@@ -34,15 +44,20 @@ static esp_err_t get_readings_handler(httpd_req_t *req) {
     }
   }
 
-  httpd_resp_set_status(req, HTTPD_200);
   httpd_resp_send(req, resp, strlen(resp));
   free(resp);
 
   return ESP_OK;
 }
 
-static const httpd_uri_t get_readings = {
+static const httpd_uri_t get_index = {
     .uri = "/",
+    .method = HTTP_GET,
+    .handler = get_index_handler,
+};
+
+static const httpd_uri_t get_readings = {
+    .uri = "/data",
     .method = HTTP_GET,
     .handler = get_readings_handler,
 };
@@ -60,6 +75,7 @@ httpd_handle_t start_webserver(void) {
     // Set URI handlers
     ESP_LOGI(TAG, "Registering URI handlers");
     httpd_register_uri_handler(server, &get_readings);
+    httpd_register_uri_handler(server, &get_index);
     return server;
   }
 

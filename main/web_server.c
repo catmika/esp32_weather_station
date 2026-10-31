@@ -35,8 +35,8 @@ static esp_err_t get_readings_handler(httpd_req_t *req) {
     return ESP_OK;
   } else {
     int rc = asprintf(&resp,
-                      "{\"temperature\": \"%.1f\","
-                      "\"humidity\": \"%.1f\"}",
+                      "{\"temperature\": %.1f,"
+                      "\"humidity\": %.1f}",
                       sensor_readings.temperature, sensor_readings.humidity);
     if (rc < 0) {
       ESP_LOGE(TAG, "asprintf() returned: %d", rc);

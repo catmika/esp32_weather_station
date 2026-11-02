@@ -2,20 +2,12 @@
 #include "soc/gpio_num.h"
 
 #include "dht.h"
-
-typedef int sensor_err_t;
-#define SENSOR_OK 0
-#define SENSOR_ERR -1
+#include "sensor.h"
 
 static const char *TAG = "dht";
 
 static const dht_sensor_type_t dht_type = DHT_TYPE_AM2301;
 static const gpio_num_t dht_pin = GPIO_NUM_4;
-
-typedef struct {
-  float temperature;
-  float humidity;
-} SensorReadings;
 
 SensorReadings sensor_readings = {0.0, 0.0};
 
@@ -26,8 +18,8 @@ sensor_err_t read_dht(void) {
 
   if (res != ESP_OK) {
     ESP_LOGW(TAG,
-             "Failed to read from DHT sensor, pin: %s, type: %s, error: %d",
-             dht_pin, dht_type, res);
+             "Failed to read from DHT sensor, pin: %d, type: %d, error: %s",
+             dht_pin, dht_type, esp_err_to_name(res));
     return SENSOR_ERR;
   } else {
     ESP_LOGI(TAG, "Temperature: %.1f, Humidity: %.1f",
